@@ -3,6 +3,7 @@ import streamlit as st
 from utils.code_generator import generate_code
 from utils.explainer import explain_code
 from utils.test_generator import generate_tests
+from utils.agents import run_agent
 from utils.vector_store import vector_store
 from utils.config import APP_TITLE, APP_ICON
 import uuid
@@ -27,6 +28,12 @@ if 'tests' not in st.session_state:
     st.session_state.tests = ""
 if 'snippet_id' not in st.session_state:
     st.session_state.snippet_id = None
+if 'bug_analysis' not in st.session_state:
+    st.session_state.bug_analysis = ""
+if 'optimized_code' not in st.session_state:
+    st.session_state.optimized_code = ""
+if 'documentation' not in st.session_state:
+    st.session_state.documentation = ""
 
 # Input fields
 col1, col2 = st.columns([1, 2])
@@ -80,7 +87,14 @@ if st.button("Generate Code", type="primary"):
 
 # Display results in tabs
 if st.session_state.generated_code:
-    tab1, tab2, tab3 = st.tabs(["Generated Code", "Explanation", "Test Cases"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "Generated Code", 
+        "Explanation", 
+        "Test Cases",
+        "Bug Detection",
+        "Code Optimization",
+        "Documentation"
+    ])
     
     with tab1:
         st.subheader("Generated Code")
@@ -123,3 +137,75 @@ if st.session_state.generated_code:
             file_name=f"test_{language.lower()}.{language.lower()}",
             mime="text/plain"
         )
+    
+    with tab4:
+        st.subheader("Bug Detection")
+        bug_request = st.text_area("Describe what you want to check for bugs:", 
+                                   value="Check for any bugs in this code", height=100)
+        
+        if st.button("Detect Bugs", key="bug_button"):
+            with st.spinner("Analyzing for bugs..."):
+                st.session_state.bug_analysis = run_agent(
+                    bug_request, 
+                    st.session_state.generated_code, 
+                    language
+                )
+        
+        if st.session_state.bug_analysis:
+            st.markdown(st.session_state.bug_analysis)
+            
+            # Download button for bug analysis
+            st.download_button(
+                label="Download Bug Analysis",
+                data=st.session_state.bug_analysis,
+                file_name="bug_analysis.md",
+                mime="text/markdown"
+            )
+    
+    with tab5:
+        st.subheader("Code Optimization")
+        opt_request = st.text_area("Describe optimization goals:", 
+                                   value="Optimize this code for performance and readability", height=100)
+        
+        if st.button("Optimize Code", key="opt_button"):
+            with st.spinner("Optimizing code..."):
+                st.session_state.optimized_code = run_agent(
+                    opt_request, 
+                    st.session_state.generated_code, 
+                    language
+                )
+        
+        if st.session_state.optimized_code:
+            st.markdown(st.session_state.optimized_code)
+            
+            # Download button for optimized code
+            st.download_button(
+                label="Download Optimized Code",
+                data=st.session_state.optimized_code,
+                file_name=f"optimized_code.{language.lower()}",
+                mime="text/plain"
+            )
+    
+    with tab6:
+        st.subheader("Documentation")
+        doc_request = st.text_area("Describe documentation needs:", 
+                                   value="Generate comprehensive documentation for this code", height=100)
+        
+        if st.button("Generate Documentation", key="doc_button"):
+            with st.spinner("Generating documentation..."):
+                st.session_state.documentation = run_agent(
+                    doc_request, 
+                    st.session_state.generated_code, 
+                    language
+                )
+        
+        if st.session_state.documentation:
+            st.markdown(st.session_state.documentation)
+            
+            # Download button for documentation
+            st.download_button(
+                label="Download Documentation",
+                data=st.session_state.documentation,
+                file_name="documentation.md",
+                mime="text/markdown"
+            )
