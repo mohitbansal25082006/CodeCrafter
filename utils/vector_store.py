@@ -2,11 +2,25 @@
 import chromadb
 from chromadb.config import Settings
 from utils.config import CHROMA_DB_PATH
+import os
+import tempfile
 
 class VectorStore:
     def __init__(self):
-        # Create Chroma client with persistent storage
-        self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        try:
+            # Try to create the directory if it doesn't exist
+            if not os.path.exists(CHROMA_DB_PATH):
+                os.makedirs(CHROMA_DB_PATH, exist_ok=True)
+            
+            # Try to use persistent client
+            self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+            self.persistent = True
+        except Exception as e:
+            # Fall back to in-memory client
+            self.client = chromadb.Client(Settings(anonymized_telemetry=False))
+            self.persistent = False
+            print(f"Failed to use persistent ChromaDB: {e}. Using in-memory client instead.")
+        
         # Create or get collection
         self.collection = self.client.get_or_create_collection(name="code_snippets")
     

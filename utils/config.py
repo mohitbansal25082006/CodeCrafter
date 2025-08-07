@@ -13,8 +13,8 @@ if not OPENAI_API_KEY:
     st.error("OpenAI API key not found. Please set it in your Streamlit Cloud secrets or environment variables.")
     st.stop()
 
-# ChromaDB settings
-CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "data/chroma_db")
+# ChromaDB settings - use /tmp for Streamlit Cloud
+CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "/tmp/chroma_db")
 
 # App settings
 APP_TITLE = "CodeCrafter"
