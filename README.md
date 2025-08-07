@@ -3,8 +3,9 @@
 **AI-Powered Code Generation Assistant**  
 ![CodeCrafter Badge](https://img.shields.io/badge/CodeCrafter-AI%20Powered-blue)
 
-🌐 **Live Demo**: [CodeCrafter on Streamlit Cloud]([https://codecrafter.streamlit.app](https://codecrafter-jehemxr5mgdbwiyzmpdflq.streamlit.app/)
-🖼 **Preview**: ![CodeCrafter Preview](preview3.png)
+🌐 **Live Demo**: [CodeCrafter on Streamlit Cloud](https://codecrafter-jehemxr5mgdbwiyzmpdflq.streamlit.app/)  
+🖼 **Preview**:  
+![CodeCrafter Preview](preview3.png)
 
 ---
 
