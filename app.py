@@ -6,7 +6,7 @@ from utils.test_generator import generate_tests
 from utils.agents import run_agent
 from utils.github_api import GitHubAPI
 from utils.pr_reviewer import generate_pr_review, extract_line_comments
-from utils.vector_store import vector_store
+from utils.simple_vector_store import vector_store  # Use the simple vector store
 from utils.config import APP_TITLE, APP_ICON
 import uuid
 import time
@@ -66,10 +66,10 @@ with tab1:
                 results = vector_store.search_snippets(search_query)
                 if results['documents']:
                     st.write("Found similar snippets:")
-                    for i, doc in enumerate(results['documents'][0]):
+                    for i, doc in enumerate(results['documents']):
                         with st.expander(f"Snippet {i+1}"):
-                            st.code(doc, language=results['metadatas'][0][i]['language'].lower())
-                            st.write(f"Task: {results['metadatas'][0][i]['task']}")
+                            st.code(doc, language=results['metadatas'][i]['language'].lower())
+                            st.write(f"Task: {results['metadatas'][i]['task']}")
                 else:
                     st.write("No similar snippets found.")
         else:
@@ -309,3 +309,16 @@ with tab2:
             file_name=f"pr_{pr_number}_review.md",
             mime="text/markdown"
         )
+
+# Add footer
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align: center; padding: 10px;">
+        <p>CodeCrafter - AI-Powered Code Generation Assistant</p>
+        <p>Made with ❤️ using Streamlit, LangChain, and OpenAI</p>
+        <p><a href="https://github.com/mohitbansal25082006/CodeCrafter" target="_blank">GitHub Repository</a></p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
