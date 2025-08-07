@@ -1,5 +1,17 @@
 # app.py
 import streamlit as st
+import uuid
+import time
+import base64
+import threading
+import uvicorn
+from fastapi import FastAPI
+from pydantic import BaseModel
+import logging
+import os
+from dotenv import load_dotenv
+
+# Import our utility modules
 from utils.code_generator import generate_code
 from utils.explainer import explain_code
 from utils.test_generator import generate_tests
@@ -8,8 +20,10 @@ from utils.github_api import GitHubAPI
 from utils.pr_reviewer import generate_pr_review, extract_line_comments
 from utils.vector_store import vector_store
 from utils.config import APP_TITLE, APP_ICON
-import uuid
-import time
+from utils.logger import logger
+
+# Load environment variables
+load_dotenv()
 
 # Set page config
 st.set_page_config(
@@ -18,8 +32,43 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title(f"{APP_ICON} {APP_TITLE}")
-st.markdown("### AI-Powered Code Generation Assistant")
+# Create FastAPI app for VS Code extension
+api = FastAPI()
+
+# Define request models for API endpoints
+class GenerateCodeRequest(BaseModel):
+    prompt: str
+    language: str
+
+class ExplainCodeRequest(BaseModel):
+    code: str
+    language: str
+
+# API endpoints for VS Code extension
+@api.post("/generate-code")
+async def generate_code_api(request: GenerateCodeRequest):
+    try:
+        logger.info(f"API request to generate code: {request.prompt}")
+        generated_code = generate_code(request.language, request.prompt)
+        return {"code": generated_code}
+    except Exception as e:
+        logger.error(f"Error generating code: {str(e)}")
+        return {"error": str(e)}
+
+@api.post("/explain-code")
+async def explain_code_api(request: ExplainCodeRequest):
+    try:
+        logger.info(f"API request to explain code")
+        explanation = explain_code(request.code)
+        return {"explanation": explanation}
+    except Exception as e:
+        logger.error(f"Error explaining code: {str(e)}")
+        return {"error": str(e)}
+
+# Function to get logo as base64
+def get_img_as_base64(path):
+    with open(path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
 
 # Initialize session state variables
 if 'generated_code' not in st.session_state:
@@ -41,6 +90,88 @@ if 'pr_review' not in st.session_state:
 if 'github_token' not in st.session_state:
     st.session_state.github_token = ""
 
+# Custom CSS for styling
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        color: #1E88E5;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .sub-header {
+        font-size: 1.5rem;
+        color: #5E35B1;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .code-container {
+        background-color: #262730;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0E1117;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    .stButton button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .stButton button:hover {
+        background-color: #45a049;
+    }
+    .stDownloadButton button {
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    .stDownloadButton button:hover {
+        background-color: #0b7dda;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Add logo if available
+try:
+    img_base64 = get_img_as_base64("logo.png")
+    st.markdown(
+        f"""
+        <style>
+            [data-testid="stSidebarNav"] {{
+                background-image: url("data:image/png;base64,{img_base64}");
+                background-repeat: no-repeat;
+                padding-top: 80px;
+                background-position: 20px 20px;
+            }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+except:
+    pass
+
+# Main app title
+st.markdown(f'<h1 class="main-header">{APP_ICON} {APP_TITLE}</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color: #757575; font-size: 1.2rem;">AI-Powered Code Generation Assistant</p>', unsafe_allow_html=True)
+
 # Sidebar for GitHub settings
 st.sidebar.header("GitHub Settings")
 st.session_state.github_token = st.sidebar.text_input("GitHub Token", type="password", value=st.session_state.github_token)
@@ -58,11 +189,12 @@ with tab1:
         task = st.text_area("Describe the task:", height=150)
 
     # Search for similar snippets
-    st.subheader("Search for Similar Code Snippets")
+    st.markdown('<h3 class="sub-header">Search for Similar Code Snippets</h3>', unsafe_allow_html=True)
     search_query = st.text_input("Enter a query to search for similar snippets:")
     if st.button("Search"):
         if search_query:
             with st.spinner("Searching..."):
+                logger.info(f"Searching for snippets: {search_query}")
                 results = vector_store.search_snippets(search_query)
                 if results['documents']:
                     st.write("Found similar snippets:")
@@ -79,6 +211,7 @@ with tab1:
     if st.button("Generate Code", type="primary"):
         if task:
             with st.spinner("Generating code..."):
+                logger.info(f"Generating code for task: {task}")
                 # Generate code
                 generated_code = generate_code(language, task)
                 st.session_state.generated_code = generated_code
@@ -95,8 +228,10 @@ with tab1:
                         "timestamp": time.time()
                     }
                 )
+                logger.info("Code generated and stored successfully")
                 st.success("Code generated and stored successfully!")
         else:
+            logger.warning("Empty task submitted")
             st.error("Please enter a task description.")
 
     # Display results in tabs
@@ -111,7 +246,7 @@ with tab1:
         ])
         
         with subtab1:
-            st.subheader("Generated Code")
+            st.markdown('<h3 class="sub-header">Generated Code</h3>', unsafe_allow_html=True)
             st.code(st.session_state.generated_code, language=language.lower())
             
             # Download button for code
@@ -123,9 +258,10 @@ with tab1:
             )
         
         with subtab2:
-            st.subheader("Code Explanation")
+            st.markdown('<h3 class="sub-header">Code Explanation</h3>', unsafe_allow_html=True)
             if not st.session_state.explanation:
                 with st.spinner("Generating explanation..."):
+                    logger.info("Generating code explanation")
                     st.session_state.explanation = explain_code(st.session_state.generated_code)
             st.markdown(st.session_state.explanation)
             
@@ -138,9 +274,10 @@ with tab1:
             )
         
         with subtab3:
-            st.subheader("Test Cases")
+            st.markdown('<h3 class="sub-header">Test Cases</h3>', unsafe_allow_html=True)
             if not st.session_state.tests:
                 with st.spinner("Generating tests..."):
+                    logger.info("Generating test cases")
                     st.session_state.tests = generate_tests(st.session_state.generated_code, testing_framework)
             st.code(st.session_state.tests, language=language.lower())
             
@@ -153,12 +290,13 @@ with tab1:
             )
         
         with subtab4:
-            st.subheader("Bug Detection")
+            st.markdown('<h3 class="sub-header">Bug Detection</h3>', unsafe_allow_html=True)
             bug_request = st.text_area("Describe what you want to check for bugs:", 
                                        value="Check for any bugs in this code", height=100)
             
             if st.button("Detect Bugs", key="bug_button"):
                 with st.spinner("Analyzing for bugs..."):
+                    logger.info("Running bug detection")
                     st.session_state.bug_analysis = run_agent(
                         bug_request, 
                         st.session_state.generated_code, 
@@ -177,12 +315,13 @@ with tab1:
                 )
         
         with subtab5:
-            st.subheader("Code Optimization")
+            st.markdown('<h3 class="sub-header">Code Optimization</h3>', unsafe_allow_html=True)
             opt_request = st.text_area("Describe optimization goals:", 
                                        value="Optimize this code for performance and readability", height=100)
             
             if st.button("Optimize Code", key="opt_button"):
                 with st.spinner("Optimizing code..."):
+                    logger.info("Running code optimization")
                     st.session_state.optimized_code = run_agent(
                         opt_request, 
                         st.session_state.generated_code, 
@@ -201,12 +340,13 @@ with tab1:
                 )
         
         with subtab6:
-            st.subheader("Documentation")
+            st.markdown('<h3 class="sub-header">Documentation</h3>', unsafe_allow_html=True)
             doc_request = st.text_area("Describe documentation needs:", 
                                        value="Generate comprehensive documentation for this code", height=100)
             
             if st.button("Generate Documentation", key="doc_button"):
                 with st.spinner("Generating documentation..."):
+                    logger.info("Generating documentation")
                     st.session_state.documentation = run_agent(
                         doc_request, 
                         st.session_state.generated_code, 
@@ -225,7 +365,7 @@ with tab1:
                 )
 
 with tab2:
-    st.header("GitHub Pull Request Review")
+    st.markdown('<h2 class="sub-header">GitHub Pull Request Review</h2>', unsafe_allow_html=True)
     
     # Input fields for PR review
     col1, col2 = st.columns(2)
@@ -244,6 +384,7 @@ with tab2:
         else:
             with st.spinner("Analyzing pull request..."):
                 try:
+                    logger.info(f"Reviewing PR {pr_number} in {repo_owner}/{repo_name}")
                     # Initialize GitHub API
                     github_api = GitHubAPI(token=st.session_state.github_token)
                     
@@ -292,14 +433,16 @@ with tab2:
                             except Exception as e:
                                 st.warning(f"Failed to post comment: {str(e)}")
                     
+                    logger.info("Pull request review completed successfully")
                     st.success("Pull request review completed successfully!")
                     
                 except Exception as e:
+                    logger.error(f"Error reviewing pull request: {str(e)}")
                     st.error(f"Error reviewing pull request: {str(e)}")
     
     # Display PR review
     if st.session_state.pr_review:
-        st.subheader("Pull Request Review")
+        st.markdown('<h3 class="sub-header">Pull Request Review</h3>', unsafe_allow_html=True)
         st.markdown(st.session_state.pr_review)
         
         # Download button for PR review
@@ -309,3 +452,29 @@ with tab2:
             file_name=f"pr_{pr_number}_review.md",
             mime="text/markdown"
         )
+
+# Footer
+st.markdown(
+    """
+    <div class="footer">
+        <p>CodeCrafter © 2023 | AI-Powered Coding Assistant</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Run FastAPI in a separate thread for VS Code extension
+def run_fastapi():
+    uvicorn.run(api, host="0.0.0.0", port=8000, log_level="error")
+
+if __name__ == "__main__":
+    # Start FastAPI in a daemon thread
+    fastapi_thread = threading.Thread(target=run_fastapi)
+    fastapi_thread.daemon = True
+    fastapi_thread.start()
+    
+    # Run Streamlit
+    import streamlit.web.cli as stcli
+    import sys
+    sys.argv = ["streamlit", "run", "app.py"]
+    sys.exit(stcli.main())

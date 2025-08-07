@@ -1,0 +1,45 @@
+{
+  "name": "codecrafter-vscode",
+  "displayName": "CodeCrafter",
+  "description": "AI-powered coding assistant for VS Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:codecrafter.generateCode",
+    "onCommand:codecrafter.explainCode"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codecrafter.generateCode",
+        "title": "CodeCrafter: Generate Code"
+      },
+      {
+        "command": "codecrafter.explainCode",
+        "title": "CodeCrafter: Explain Code"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.4",
+    "@types/node": "^14.14.37",
+    "eslint": "^7.32.0",
+    "glob": "^7.1.7",
+    "mocha": "^8.4.0",
+    "typescript": "^4.3.5",
+    "vscode-test": "^1.5.2"
+  }
+}

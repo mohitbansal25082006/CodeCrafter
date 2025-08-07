@@ -144,4 +144,3 @@ Thumbs.db
 *.log
 config.py  # We'll create a config_template.py instead
 secrets.py
-config.py
