@@ -4,7 +4,7 @@ from langchain.prompts import PromptTemplate
 from utils.config import OPENAI_API_KEY
 
 # Initialize the LLM
-llm = OpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.3)
+llm = OpenAI(api_key=OPENAI_API_KEY, temperature=0.3)
 
 # Create a prompt template for code explanation
 explanation_template = """

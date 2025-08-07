@@ -2,9 +2,16 @@
 import os
 import streamlit as st
 
-# Try to get API keys from Streamlit secrets first, then environment variables
-OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY"))
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", os.environ.get("GITHUB_TOKEN"))
+# Get OpenAI API key from environment or secrets
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
+
+# Get GitHub token from environment or secrets
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN", "")
+
+# Check if OpenAI API key is set
+if not OPENAI_API_KEY:
+    st.error("OpenAI API key not found. Please set it in your Streamlit Cloud secrets or environment variables.")
+    st.stop()
 
 # ChromaDB settings
 CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "data/chroma_db")

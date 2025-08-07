@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 from utils.config import OPENAI_API_KEY
 
 # Initialize the LLM for agents
-llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.2)
+llm = ChatOpenAI(api_key=OPENAI_API_KEY, temperature=0.2)
 
 # Tool for bug detection and fixing
 @tool
