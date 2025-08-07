@@ -1,17 +1,14 @@
 # utils/config.py
 import os
-from dotenv import load_dotenv
+import streamlit as st
 
-# Load environment variables
-load_dotenv()
-
-# Get API keys from environment
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+# Try to get API keys from Streamlit secrets first, then environment variables
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY"))
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", os.environ.get("GITHUB_TOKEN"))
 
 # ChromaDB settings
-CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "E:/CodeCrafter/data/chroma_db")
+CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "data/chroma_db")
 
 # App settings
-APP_TITLE = os.getenv("APP_TITLE", "CodeCrafter")
-APP_ICON = os.getenv("APP_ICON", "🛠️")
+APP_TITLE = "CodeCrafter"
+APP_ICON = "🛠️"
