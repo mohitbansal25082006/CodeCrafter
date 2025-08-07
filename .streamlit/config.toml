@@ -1,10 +1,23 @@
 # .streamlit/config.toml
+
 [theme]
-primaryColor="#F63366"
-backgroundColor="#FFFFFF"
-secondaryBackgroundColor="#F0F2F6"
-textColor="#262730"
-font="sans serif"
+# Base theme - can be "light" or "dark"
+base = "dark"
+
+# Primary color for UI elements
+primaryColor = "#4F8BF9"
+
+# Background color for the main content area
+backgroundColor = "#0E1117"
+
+# Background color for sidebar and most interactive widgets
+secondaryBackgroundColor = "#262730"
+
+# Color used for almost all text
+textColor = "#FAFAFA"
+
+# Font family for the app
+font = "sans serif"
 
 [server]
 headless = true
